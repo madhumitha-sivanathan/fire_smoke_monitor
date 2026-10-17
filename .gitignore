@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+db.sqlite3
+media/
+logs/
+# Model weights are not committed; see README.
+models/*.pt
+.env
+.DS_Store

@@ -1,0 +1,123 @@
+{% extends "monitor/base.html" %}
+{% load static %}
+
+{% block content %}
+{% if not model_ready %}
+<div class="notice" role="alert">
+  <strong>Model file not found.</strong>
+  Cameras are saved, but no predictions will run until you place your weights at
+  <code>{{ model_path }}</code>.
+</div>
+{% endif %}
+
+<div class="console">
+  <aside class="rail" aria-label="CCTV devices">
+    <div class="rail-head">
+      <h2>CCTV devices</h2>
+      <button type="button" class="btn btn-primary" id="open-add">Add device</button>
+    </div>
+
+    <ul class="devices" id="device-list">
+      {% for d in devices %}
+      <li>
+        <button type="button" class="device" data-id="{{ d.pk }}" aria-pressed="false">
+          <span class="dot dot-{{ d.status }}" title="{{ d.get_status_display }}"></span>
+          <span class="device-text">
+            <span class="device-name">{{ d.name }}</span>
+            <span class="device-meta">Snapshot every {{ d.snapshot_interval }} s</span>
+          </span>
+        </button>
+      </li>
+      {% empty %}
+      <li class="empty">No CCTV devices yet. Add one to start monitoring.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <main class="detail" id="detail" data-selected="{{ selected_id }}">
+    <div class="placeholder" id="placeholder">
+      <h2>Select a camera</h2>
+      <p>Pick a device from the list to see its live predictions and detection history.</p>
+    </div>
+  </main>
+</div>
+
+<dialog id="add-dialog" {% if open_add_modal %}data-open-on-load{% endif %}>
+  <form method="post" action="{% url 'device_create' %}" class="dialog-form">
+    {% csrf_token %}
+    <h2>Add CCTV device</h2>
+    {% for field in add_form %}
+    <div class="field">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="dialog-actions">
+      <button type="button" class="btn" id="cancel-add">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save device</button>
+    </div>
+  </form>
+</dialog>
+
+<template id="detail-tpl">
+  <section class="detail-head">
+    <div>
+      <h2 data-bind="name"></h2>
+      <p class="muted"><span data-bind="url"></span></p>
+    </div>
+    <div class="head-actions">
+      <a class="btn" data-bind="rules-link">Configure alarm rules</a>
+      <form method="post" data-bind="delete-form" onsubmit="return confirm('Delete this camera and all of its snapshots?');">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="live" data-bind="live" aria-live="polite">
+    <div class="live-frame">
+      <img data-bind="image" alt="Latest snapshot from this camera" hidden>
+      <div class="live-empty" data-bind="image-empty">Waiting for the first snapshot.</div>
+    </div>
+    <div class="live-info">
+      <p class="live-state" data-bind="state"></p>
+      <p class="live-sub" data-bind="state-sub"></p>
+
+      <div class="meter" data-bind="meter" hidden>
+        <div class="segments" data-bind="segments"></div>
+        <p class="meter-label" data-bind="meter-label"></p>
+      </div>
+
+      <table class="rules-summary">
+        <thead><tr><th scope="col">Rule</th><th scope="col">Threshold</th><th scope="col">Frames</th></tr></thead>
+        <tbody data-bind="rules"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="recent">
+    <h3>Ongoing predictions</h3>
+    <ol class="chips" data-bind="recent"></ol>
+  </section>
+
+  <section class="history">
+    <div class="history-head">
+      <h3>Prediction history</h3>
+      <label class="check"><input type="checkbox" data-bind="detections-only" checked> Detections only</label>
+    </div>
+    <div class="table-wrap">
+      <table class="history-table">
+        <thead>
+          <tr><th scope="col">Time</th><th scope="col">Result</th><th scope="col">Confidence</th><th scope="col">Alarm</th><th scope="col">Snapshot</th></tr>
+        </thead>
+        <tbody data-bind="history"></tbody>
+      </table>
+    </div>
+    <p class="empty" data-bind="history-empty" hidden>No predictions to show yet.</p>
+    <button type="button" class="btn" data-bind="more" hidden>Load more</button>
+  </section>
+</template>
+
+<script src="{% static 'monitor/dashboard.js' %}" defer></script>
+{% endblock %}

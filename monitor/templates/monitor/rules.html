@@ -1,0 +1,43 @@
+{% extends "monitor/base.html" %}
+
+{% block title %}Alarm rules for {{ device.name }}{% endblock %}
+
+{% block content %}
+<main class="page">
+  <p><a class="back" href="/?device={{ device.pk }}">Back to {{ device.name }}</a></p>
+  <h1>Configure alarm rules</h1>
+  <p class="muted">
+    {{ device.name }} has one rule for fire and one for smoke. A detection counts only when its confidence
+    reaches the threshold, and an alarm is raised only after it holds for the chosen number of consecutive
+    snapshots (every {{ device.snapshot_interval }} s).
+  </p>
+
+  <form method="post" class="rules-form">
+    {% csrf_token %}
+    {% for key, form in forms.items %}
+    <fieldset class="rule-card">
+      <legend>{% if key == "fire" %}Fire rule{% else %}Smoke rule{% endif %}</legend>
+
+      {% for field in form %}
+      <div class="field {% if field.name == 'is_enabled' %}field-check{% endif %}">
+        {% if field.name == 'is_enabled' %}
+          {{ field }} <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% else %}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.name == 'threshold' %}<p class="hint">Between {{ model_floor|floatformat:2 }} and 1. Higher values mean fewer, more certain alarms.</p>{% endif %}
+          {% if field.name == 'temporal_frames' %}<p class="hint">Consecutive snapshots that must agree. Detection delay is about frames × {{ device.snapshot_interval }} s.</p>{% endif %}
+        {% endif %}
+        {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+    </fieldset>
+    {% endfor %}
+
+    <div class="dialog-actions">
+      <a class="btn" href="/?device={{ device.pk }}">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save rules</button>
+    </div>
+  </form>
+</main>
+{% endblock %}

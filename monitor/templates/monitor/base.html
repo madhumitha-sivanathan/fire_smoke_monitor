@@ -1,0 +1,23 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FireWatch{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'monitor/style.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{% url 'dashboard' %}">FireWatch</a>
+    <span class="tagline">Fire and smoke detection for CCTV cameras</span>
+  </header>
+
+  {% if messages %}
+  <div class="messages" role="status">
+    {% for message in messages %}<p class="message message-{{ message.tags }}">{{ message }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,4 @@
+Django>=5.2
+opencv-python>=4.9
+numpy
+ultralytics>=8.3
